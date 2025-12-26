@@ -1,0 +1,52 @@
+#!/bin/bash
+# Pre-merge commit hook to validate Dockerfile changes
+# This hook prevents merging if the Dockerfile is invalid
+
+set -e
+
+DOCKERFILE="images/dbt-core/Dockerfile"
+DBT_VERSION_FILE="images/dbt-core/versions/dbt-core.txt"
+
+# Check if Dockerfile exists
+if [ ! -f "$DOCKERFILE" ]; then
+    echo "❌ Error: Dockerfile not found at $DOCKERFILE"
+    exit 1
+fi
+
+echo "🔍 Validating Dockerfile..."
+
+# Check for required ARG statements
+if ! grep -q "ARG PYTHON_VERSION_FILE" "$DOCKERFILE"; then
+    echo "❌ Error: PYTHON_VERSION_FILE argument not found in Dockerfile"
+    exit 1
+fi
+
+if ! grep -q "ARG DBT_VERSION_FILE" "$DOCKERFILE"; then
+    echo "❌ Error: DBT_VERSION_FILE argument not found in Dockerfile"
+    exit 1
+fi
+
+# Check for required stages
+if ! grep -q "AS base" "$DOCKERFILE"; then
+    echo "⚠️  Warning: 'base' stage not found in Dockerfile"
+fi
+
+if ! grep -q "AS selector" "$DOCKERFILE"; then
+    echo "⚠️  Warning: 'selector' stage not found in Dockerfile"
+fi
+
+# Validate dbt version file exists
+if [ ! -f "$DBT_VERSION_FILE" ]; then
+    echo "❌ Error: dbt-core version file not found at $DBT_VERSION_FILE"
+    exit 1
+fi
+
+DBT_VERSION=$(cat "$DBT_VERSION_FILE" | tr -d '\n' | xargs)
+if [ -z "$DBT_VERSION" ]; then
+    echo "❌ Error: dbt-core version file is empty"
+    exit 1
+fi
+
+echo "✓ Dockerfile validation passed"
+echo "✓ dbt-core version: $DBT_VERSION"
+exit 0

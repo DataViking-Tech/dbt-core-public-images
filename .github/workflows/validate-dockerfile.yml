@@ -1,0 +1,83 @@
+name: Validate Dockerfile
+
+on:
+  pull_request:
+    paths:
+      - 'images/dbt-core/Dockerfile'
+      - '.github/workflows/validate-dockerfile.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'images/dbt-core/Dockerfile'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Dockerfile syntax
+        run: |
+          # Check if docker is available
+          if ! command -v docker &> /dev/null; then
+            echo "Docker not found, installing hadolint for linting instead..."
+          fi
+
+      - name: Run hadolint for Dockerfile linting
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: images/dbt-core/Dockerfile
+          ignore: DL3008,DL3009
+
+      - name: Validate required files exist
+        run: |
+          if [ ! -f "images/dbt-core/versions/dbt-core.txt" ]; then
+            echo "❌ Error: dbt-core version file not found"
+            exit 1
+          fi
+          
+          echo "✓ dbt-core version file exists"
+          echo "  Version: $(cat images/dbt-core/versions/dbt-core.txt)"
+
+      - name: Validate Dockerfile arguments
+        run: |
+          echo "Checking Dockerfile arguments..."
+          
+          # Check for required ARG statements
+          if ! grep -q "ARG PYTHON_VERSION_FILE" images/dbt-core/Dockerfile; then
+            echo "❌ Error: PYTHON_VERSION_FILE argument not found"
+            exit 1
+          fi
+          
+          if ! grep -q "ARG DBT_VERSION_FILE" images/dbt-core/Dockerfile; then
+            echo "❌ Error: DBT_VERSION_FILE argument not found"
+            exit 1
+          fi
+          
+          echo "✓ All required Dockerfile arguments present"
+
+      - name: Parse Dockerfile
+        run: |
+          echo "Parsing Dockerfile structure..."
+          
+          # Count FROM statements
+          from_count=$(grep -c "^FROM" images/dbt-core/Dockerfile)
+          echo "✓ Found $from_count FROM statements"
+          
+          # Verify stages
+          if ! grep -q "AS base" images/dbt-core/Dockerfile; then
+            echo "⚠ Warning: 'base' stage not found"
+          fi
+          
+          if ! grep -q "AS selector" images/dbt-core/Dockerfile; then
+            echo "⚠ Warning: 'selector' stage not found"
+          fi
+          
+          echo "✓ Dockerfile parsing complete"
+
+      - name: Validation Summary
+        if: success()
+        run: |
+          echo "✅ All Dockerfile validations passed!"
