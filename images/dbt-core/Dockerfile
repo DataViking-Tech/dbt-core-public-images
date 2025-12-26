@@ -9,7 +9,6 @@ ARG PYTHON_VERSION_FILE=versions/python.txt
 ARG DBT_VERSION_FILE=images/dbt-core/versions/dbt-core.txt
 
 # Use a small base to keep devcontainers snappy.
-# You can swap to bookworm/slim/etc as you prefer.
 FROM python:3.12-slim AS base
 # We'll overwrite this in a second stage after reading python.txt; this keeps Dockerfile simple.
 
