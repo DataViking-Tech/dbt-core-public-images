@@ -1,2 +1,2 @@
 # dbt-core-public-image
-Innards for dbt-core public images (hosted on quay.io).
+Innards for dbt-core public images (hosted via quay.io).
