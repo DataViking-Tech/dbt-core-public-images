@@ -25,7 +25,7 @@ FROM python:3.12-slim
 COPY --from=selector /python_version /python_version
 RUN PYV="$(< /python_version)" && \
     echo "Using Python ${PYV}" && \
-    sed -i "s/^deb /deb /" /etc/apt/sources.list
+    sed -i "s/^deb /deb /" /etc/apt/sources.list && \
     sed -i "s/^deb /deb /" /etc/apt/sources.list
 
 # Install system deps commonly needed for dbt + adapters (safe default).
@@ -39,7 +39,6 @@ RUN test -f "${DBT_VERSION_FILE}" && tr -d '\n' < "${DBT_VERSION_FILE}" > /dbt_v
 # Install dbt-core pinned to repo version file
 RUN DBT_VERSION="$(< /dbt_version)" && \
     python -m pip install --no-cache-dir --upgrade pip==24.0 setuptools==68.0.0 wheel==0.42.0 && \
-    pip install --no-cache-dir "dbt-core==${DBT_VERSION}"
     pip install --no-cache-dir "dbt-core==${DBT_VERSION}"
 
 # A couple nice-to-haves for devcontainers
